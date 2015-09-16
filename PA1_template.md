@@ -105,10 +105,13 @@ data$wDay <- weekdays(data$date, abbreviate=TRUE)
 ## Calculating the mean for every weekday and filling missing data.
 wDayMean <- aggregate(steps~wDay+interval, data, mean, na.rm=TRUE)
 dataFill <- data
-missSteps <- merge(data[missing,c("interval","wDay")],
-                   wDayMean[,c("interval","wDay","steps")],all.x=TRUE, sort=FALSE)
-## The use of sort=FALSE is essencial to make the two vectors below match.
-dataFill[missing,"steps"] <- missSteps$steps
+for(i in 1:nrow(dataFill)) {
+      if(is.na(dataFill[i,"steps"])) {
+            index <- wDayMean$wDay == dataFill[i,"wDay"] &
+                  wDayMean$interval == dataFill[i,"interval"]
+            dataFill[i,"steps"] <- wDayMean[index,"steps"]
+      }
+}
 
 ## Making histogram
 totalSteps <- tapply(dataFill$steps, dataFill$date, sum)
@@ -123,7 +126,7 @@ meanSteps <- as.integer(mean(totalSteps))
 medianSteps <- as.integer(median(totalSteps))
 ```
 
-This new histogram looks very much like the previous one and it shows us that, after filling missing values with the above-mentioned strategy, the daily total of steps still has its most common value between 10000 and 15000. The mean number becomes 10821 and the median changed to 11015. A shift in those values was expected, since, in the new dataset, a certain weekday may have been "favored" over the others, so to speak.
+This new histogram looks very much like the previous one and it shows us that, after filling missing values with the above-mentioned strategy, the daily total of steps still has its most common value between 10000 and 15000. The mean number becomes 10821 and the median changed to 11015. A shift in those values was expected, since, in the new dataset, the proportion between weekdays has changed.
 
 ### Are there differences in activity patterns between weekdays and weekends?
 
@@ -140,10 +143,12 @@ dataFill$wDay.wEnd <- as.factor(dataFill$wDay.wEnd)
 # And now, the plot!
 plotData<-aggregate(steps ~ interval+wDay.wEnd, data=dataFill, mean)
 qplot(interval, steps, data=plotData, geom="line", xlab="Time interval (hours)",
-      ylab="Nº os steps / 5 minutes") +
+      ylab="Nº of steps / 5 minutes") +
       facet_grid(wDay.wEnd~.)
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
 
-They show a peak number of steps during earlier hours on the weekdays and, for the rest of the day, reduced activity in comparison with the weekends. Just what one would expect from a person who sits all day at an office during the week and is more free to roam around on weekends.
+They show a peak number of steps during earlier hours on the weekdays and, for the rest of the day, reduced activity in comparison with the weekends. Just what one would expect from a person who sits all day at an office during the week and is free to roam around on weekends.
+
+This report was generated on 2015-09-16.
